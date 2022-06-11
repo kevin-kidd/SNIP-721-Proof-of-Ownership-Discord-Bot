@@ -1,0 +1,32 @@
+{
+  "name": "scrt_discord_bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "deploy": "node commands.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@noble/hashes": "1.0.0",
+    "@noble/secp256k1": "1.5.2",
+    "body-parser": "^1.20.0",
+    "discord.js": "^13.7.0",
+    "dotenv": "^16.0.1",
+    "express": "^4.18.1",
+    "mongodb": "^4.6.0",
+    "nodemon": "^2.0.16",
+    "secp256k1": "^4.0.3",
+    "secretjs": "^1.2.0-beta.64"
+  },
+  "devDependencies": {
+    "@cosmjs/amino": "^0.26.4",
+    "@cosmjs/crypto": "^0.26.4",
+    "@cosmjs/encoding": "^0.26.4",
+    "bech32": "2.0.0",
+    "cors": "^2.8.5",
+    "node-cron": "^3.0.0"
+  }
+}
