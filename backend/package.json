@@ -13,7 +13,7 @@
     "@noble/hashes": "1.0.0",
     "@noble/secp256k1": "1.5.2",
     "body-parser": "^1.20.0",
-    "discord.js": "^13.7.0",
+    "discord.js": "^13.8.0",
     "dotenv": "^16.0.1",
     "express": "^4.18.1",
     "mongodb": "^4.6.0",

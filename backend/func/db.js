@@ -18,10 +18,14 @@ const replaceUser = async (collection, token, userData, guild, member) => {
         address: encryptData(userData.address)
     }
 
+    // Discord role
+    const roles = await guild.roles.fetch()
+    const role = roles.find((r) => r.id === process.env.ROLE_ID)
+
     let oldUser = await grabUser(collection, token)
     if(oldUser === null){ // Check if old user does not exist in database
         if(await countUser(collection, userData.discord) === 0){
-            if(!await addRole(member)){
+            if(!await addRole(member, role)){
                 return {
                     success: false,
                     message: "Unable to add role to the new user."
@@ -35,18 +39,18 @@ const replaceUser = async (collection, token, userData, guild, member) => {
 
     if(oldDiscord !== userData.discord){ // Verify old discord does not match new discord
         if(await countUser(collection, oldDiscord) <= 1){ // Check if old user has no more NFTs linked to their Discord
-            if(!await removeRole(oldDiscord, guild)) { // Attempt to remove role from the old user
+            if(!(await removeRole(oldDiscord, guild, role))) { // Attempt to remove role from the old user
                 return {
                     success: false,
-                    message: "Unable to remove role from the old user."
+                    message: "Unable to remove role from the old member."
                 }
             }
         }
         if(await countUser(collection, userData.discord) === 0){
-            if(!await addRole(member)){
+            if(!(await addRole(member, role))){
                 return {
                     success: false,
-                    message: "Unable to add role to the new user."
+                    message: "Unable to add role to the new member."
                 }
             }
         }
@@ -136,17 +140,22 @@ const removeUser = async (collection, token_id, address) => {
 const checkAllTokens = async (discord_client) => {
     const mongo_client = new MongoClient(process.env.MONGO_DB_URI)
     try {
+        // Database details
         await mongo_client.connect()
         const database = mongo_client.db(process.env.DB_NAME)
         const collection = database.collection(process.env.MONGO_COLLECTION_NAME)
 
+        // Discord role
         const guild = discord_client.guilds.cache.get(process.env.SERVER_ID)
+        const roles = await guild.roles.fetch()
+        const role = roles.find((r) => r.id === process.env.ROLE_ID)
 
+        // All documents in the database collection
         const allDocs = await collection.find().toArray()
 
         let decryptedDocs = []
 
-        for (const doc of allDocs) {
+        for (const doc of allDocs) { // Decrypt all documents
             decryptedDocs.push(
                 {
                     token_id: doc.token_id,
@@ -156,13 +165,13 @@ const checkAllTokens = async (discord_client) => {
             )
         }
 
-        let groupedUsers = decryptedDocs.reduce(function (r, a) {
+        let groupedUsers = decryptedDocs.reduce(function (r, a) { // Sort decrypted documents, group by matching address
             r[a.address] = r[a.address] || [];
             r[a.address].push(a);
             return r;
         }, {})
 
-        // Group by Secret address and check each secret address. Remove role if all tokens are no longer in their inventory
+        // Check inventory of each secret address. Remove role if there are no tokens in the inventory.
 
         for (const address of Object.keys(groupedUsers)) {
             const user = groupedUsers[address]
@@ -213,7 +222,7 @@ const checkAllTokens = async (discord_client) => {
                 }
             } else if(tokens.length === removeCount){
                 // Remove role, user does not hold any tokens
-                if(!await removeRole(discord_id, guild)){
+                if(!await removeRole(discord_id, guild, role)){
                     console.log("Unable to remove role from: " + discord_id)
                 }
             }

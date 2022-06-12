@@ -1,21 +1,25 @@
 import {useState} from "react";
-import {getClient} from "./keplr/helper";
-import {setWhitelist} from "./keplr/exec";
-import {XCircleIcon} from '@heroicons/react/solid'
+import {getClient, setWhitelist} from "./keplr/func";
 import {API_ENDPOINT} from "./config";
 import axios from "axios";
+import {Alert} from "./components/Alert";
 
 const App = () => {
 
     const [loading, setLoading] = useState(false)
     const [discord, setDiscord] = useState('')
-    const [isError, setIsError] = useState(false)
+    const [alertType, setAlertType] = useState('')
     const [errorMessage, setErrorMessage] = useState('')
 
     const displayError = (message) => {
         setErrorMessage(message)
         setLoading(false)
-        setIsError(true)
+        setAlertType('error')
+    }
+
+    const closeAlert = () => {
+        setAlertType('')
+        setErrorMessage('')
     }
 
     const verifyDiscord = () => {
@@ -37,51 +41,45 @@ const App = () => {
     }
 
     const linkDiscord = async () => {
-        if(!verifyDiscord()){
-            return
-        }
+        try {
+            if(!verifyDiscord()){
+                return
+            }
 
-        setLoading(true)
-        let client = await getClient()
-        if(client === undefined) {
-            // Display error - unable to grab Keplr client
-            displayError("Unable to connect Keplr!")
-            return
-        }
+            setLoading(true)
+            let client = await getClient()
+            if(client === undefined) {
+                displayError("Unable to connect Keplr! Please make sure you have installed and logged in to your Keplr wallet.")
+                return
+            }
 
-        let execResponse = await setWhitelist(client)
-        if(execResponse === undefined){
-            // Display error - set whitelist approval transaction failed!
-            displayError("Unable to set whitelisted approval. Please try again.")
-            return
+            let execResponse = await setWhitelist(client)
+            if(execResponse === undefined){
+                // Display error - set whitelist approval transaction failed!
+                displayError("Unable to set whitelisted approval. Please try again.")
+                return
+            }
+            // Post signature, address & token list to the API
+            let postResponse = await postData(JSON.parse(localStorage.getItem('signature')), discord, client.address)
+            if(postResponse.status === 200){
+                setAlertType('success')
+                setLoading(false)
+            } else {
+                displayError("Unexpected error occurred. Please contact support for help.")
+            }
+        } catch (e) {
+            if(e.message === 'Request rejected'){
+                displayError("Please accept the Keplr popup window. You must submit the transaction in order for us to verify your ownership.")
+            }
+            displayError(e.response.data)
         }
-        // Post signature, address & token list to the API
-        let postResponse = await postData(JSON.parse(localStorage.getItem('signature')), discord, client.address)
-        console.log(postResponse)
+        setLoading(false)
     }
 
     return (
       <div className="bg-white py-16 sm:py-24">
           <div className="mx-auto max-w-md px-4 sm:max-w-3xl sm:px-6 lg:max-w-7xl lg:px-8">
-              {isError ?
-                  <div className="rounded-md bg-red-50 p-4">
-                      <div className="flex">
-                          <div className="flex-shrink-0">
-                              <XCircleIcon className="h-5 w-5 text-red-400" aria-hidden="true" />
-                          </div>
-                          <div className="ml-3">
-                              <h3 className="text-sm font-medium text-red-800">There was an error while verifying your ownership.</h3>
-                              <div className="mt-2 text-sm text-red-700">
-                                  <p>
-                                      {errorMessage}
-                                  </p>
-                              </div>
-                          </div>
-                      </div>
-                  </div>
-                  :
-                  <></>
-              }
+              <Alert alertType={alertType} errorMessage={errorMessage} closeAlert={closeAlert} />
           </div>
           <div className="relative sm:py-16">
               <div aria-hidden="true" className="hidden sm:block">

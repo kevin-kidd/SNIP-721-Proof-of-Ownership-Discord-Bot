@@ -1,5 +1,30 @@
-import {SecretNetworkClient} from "secretjs";
-import {SCRT_CHAIN_ID, SCRT_GRPC_URL} from "../config";
+import {SecretNetworkClient} from "secretjs"
+import {SCRT_CHAIN_ID, SCRT_GRPC_URL, BACKEND_ADDRESS, SNIP721_CODE_HASH, SNIP721_CONTRACT_ADDRESS} from "../config"
+import {MsgExecuteContract} from "secretjs"
+
+export const setWhitelist = async (client) => {
+    const whitelistTx = new MsgExecuteContract({
+        sender: client.address,
+        contractAddress: SNIP721_CONTRACT_ADDRESS,
+        codeHash: SNIP721_CODE_HASH,
+        msg: {
+            set_whitelisted_approval: {
+                address: BACKEND_ADDRESS,
+                view_owner: "all"
+            }
+        }
+    })
+    let response = await client.tx.broadcast([whitelistTx],
+        {
+            gasLimit: 150_000
+        }
+    )
+    if(response.code === 0){
+        return response
+    } else {
+        return undefined
+    }
+}
 
 const getAddress = async () => {
     const keplrOfflineSigner = window.getOfflineSignerOnlyAmino(SCRT_CHAIN_ID);
@@ -49,9 +74,10 @@ export const getSignature = async () => {
             msgs: [
                 {
                     type: "link-discord",
-                    value: "This is a signature request. Accepting this request will allow our Discord bot to verify ownership of your wallet. " +
-                        "In addition, you will need to accept a transaction that enables our Discord bot to view all of the NFTs in your inventory. " +
-                        "Please note: The token IDs of your NFTs, Discord username and Secret address wil be stored in our database."
+                    value: "This is a signature request. Accepting this request will allow us to verify ownership of your wallet. " +
+                        "In addition, you will need to accept a transaction that enables our Discord bot to view all of the NFTs in your inventory." +
+                        "\nWARNING: Your Discord username and Secret address is encrypted and stored in our database. " +
+                        "If the decryption key is compromised, your wallet address, Discord username and token IDs can be linked together."
                 },
             ],
             memo: "Created by @KevinAKidd :)",

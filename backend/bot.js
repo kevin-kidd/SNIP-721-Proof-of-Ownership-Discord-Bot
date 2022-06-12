@@ -17,10 +17,10 @@ api.use(bodyParser.urlencoded({ extended: false }));
 api.use(bodyParser.json());
 
 // Discord client & server details
-let intents = new Intents(Intents.NON_PRIVILEGED);
+const intents = new Intents(Intents.NON_PRIVILEGED);
 intents.add('GUILD_MEMBERS');
 
-let discord_client = new Client({ intents: intents });
+const discord_client = new Client({ intents: intents });
 
 discord_client.once('ready', async () => {
     console.log('Ready!');
@@ -42,7 +42,7 @@ api.post('/add_discord', async(req, res) => {
         const members = await guild.members.fetch()
         const member = members.find((m) => m.user.tag === req.body.discord)
         if(member === undefined) {
-            res.send("Discord username is not correct or you have not joined the server!").status(400)
+            res.status(500).send("Discord username is not correct or you have not joined the server!")
             return
         }
 
@@ -59,16 +59,16 @@ api.post('/add_discord', async(req, res) => {
         const inventoryResponse = await checkInventory(userData.address)
         const inventory = inventoryResponse.tokens
         if(inventory.length === 0 && inventoryResponse.success){
-            res.send("Inventory is empty. User does not hold any NFTs or the whitelisted approval transaction was unsuccessful.").status(400)
+            res.status(500).send("Inventory is empty. User does not hold any NFTs or the whitelisted approval transaction was unsuccessful.")
             return
         }
         if(!inventoryResponse.success){
-            res.send("Failed to query inventory. Try again.").status(400)
+            res.status(500).send("Failed to query inventory. Try again.")
             return
         }
 
         if(!await checkSignature(req.body.signature, userData.address)){
-            res.send("Incorrect permit or mismatching address.").status(400)
+            res.status(500).send("Incorrect permit or mismatching address.")
             return
         }
         console.log("Permit verified.")
@@ -77,15 +77,15 @@ api.post('/add_discord', async(req, res) => {
             if (response.success) {
                 console.log(response.message)
             } else {
-                console.log(response.message)
-                res.send(response.message).status(400)
+                console.error(response.message)
+                res.status(500).send("Unable to add Discord role. Please contact an admin to resolve.")
                 return
             }
         }
-        res.send("Successful!").status(200)
+        res.status(200).send("Successful!")
     } catch (e) {
         console.log(e.message)
-        res.send("Unable to verify ownership. Please contact an admin to resolve.").status(400)
+        res.status(500).send("Unable to verify ownership. Please contact an admin to resolve.")
     } finally {
         await mongo_client.close()
     }
