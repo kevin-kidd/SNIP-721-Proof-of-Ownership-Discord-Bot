@@ -1,6 +1,6 @@
 # SNIP-721 Proof-of-Ownership Discord Bot
 
-A proof-of-ownership Discord bot for SNIP-721 tokens on the Secret Network. Verified owners are given specified roles. In addition, there is a cron script included which will continuously check ownership of all the Discord members and remove users that no longer hold any tokens.
+A proof-of-ownership Discord bot for SNIP-721 tokens on the Secret Network. Verified owners are given specified roles. In addition, there is a cron script included which will continuously check ownership of all the holders and remove users that no longer hold any tokens.
 
 ### Requirements
 1. MongoDB (recommend [Atlas](https://www.mongodb.com/atlas))
