@@ -39,6 +39,7 @@ To start the cron job:
 ```angular2html
 node cron.js
 ```
+Note: The cron job is set to run every 1 minute. The purpose of a short duration is for testing. You can increase the duration in `cron.js` when you put in production.
 
 ### Front-end Instructions
 - Edit the `config.js` file in the frontend directory
